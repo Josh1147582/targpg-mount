@@ -24,7 +24,7 @@ if [ ! -d $MOUNTPOINT ]; then
     exit 1
 fi
 
-# Get the size of the encrypted tar + 50% to cover the space ext4 and LUKS headers require
+# Get the size of the encrypted tar + 50% to cover the space ext4 and LUKS headers required
 SIZE=$(printf "%.0f" $(echo "$(du -b $FILE | cut -f1) * 1.5" | bc))
 
 
@@ -57,12 +57,16 @@ chmod -R u+rwx $MOUNTPOINT
 # Move the data
 gpg -d $FILE | tar xf - -C $MOUNTPOINT
 
+# unset the key variable
+unset KEY
+
 echo "$1 is now mounted at $MOUNTPOINT"
 
 sleep 2
 
 echo "Press Ctrl-C to quit, or press any key to unmount and delete the disk image."
 
+# TODO replace with read -n 1 var, check the variable
 read -n 1
 
 # Unmount device
@@ -76,8 +80,5 @@ cryptsetup erase $DISKIMAGE
 
 # Device is safe to remove with rm
 rm $DISKIMAGE
-
-# unset the key variable
-unset KEY
 
 echo "Image unmounted and removed."
