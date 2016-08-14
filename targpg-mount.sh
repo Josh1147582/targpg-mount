@@ -24,6 +24,20 @@ if [ ! -d $MOUNTPOINT ]; then
     exit 1
 fi
 
+# Check that cryptsetup is installed
+if ! command -v cryptsetup > /dev/null 2>&1
+then
+    echo "Cryptsetup is not installed."
+    exit 1
+fi
+
+# Check that bc is installed
+if ! command -v bc > /dev/null 2>&1
+then
+    echo "bc is not installed."
+    exit 1
+fi
+
 # Get the size of the encrypted tar + 50% to cover the space ext4 and LUKS headers required
 SIZE=$(printf "%.0f" $(echo "$(du -b $FILE | cut -f1) * 1.5" | bc))
 
@@ -64,10 +78,20 @@ echo "$1 is now mounted at $MOUNTPOINT"
 
 sleep 2
 
-echo "Press Ctrl-C to quit, or press any key to unmount and delete the disk image."
+SEL=""
 
-# TODO replace with read -n 1 var, check the variable
-read -n 1
+while [ "$SEL" != "q" ] && [ "$SEL" != "c" ]
+do
+    echo "Press q to quit, or press c to continue to unmount and delete the disk image."
+    read -n 1 SEL
+    if [ $SEL = "q" ]
+    then
+        echo -e "\nQuitting. You may manually remove the image with:\numount"\
+        "$MOUNTPOINT\ncryptsetup lukeClose $MAPNAME\ncryptsetup erase"\
+        "$DISKIMAGE\nrm $DISKIMAGE\n"
+        exit 0
+    fi
+done
 
 # Unmount device
 sudo umount $MOUNTPOINT
